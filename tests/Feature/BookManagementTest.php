@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Book;
+use App\Author;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -22,10 +23,7 @@ class BookManagementTest extends TestCase
 
         $response = $this->post(
             '/books',
-            [
-                'title' => 'Cool Book Title',
-                'author' => 'Victor'
-            ]
+            $this->data()
         );
 
         $book = Book::first();
@@ -61,13 +59,10 @@ class BookManagementTest extends TestCase
     {
         $response = $this->post(
             '/books',
-            [
-                'title' => 'Cool Title',
-                'author' => ''
-            ]
+            array_merge($this->data(), ['author_id' => ''])
         );
 
-        $response->assertSessionHasErrors('author');
+        $response->assertSessionHasErrors('author_id');
     }
 
     /**
@@ -79,10 +74,7 @@ class BookManagementTest extends TestCase
     {
         $this->post(
             '/books',
-            [
-                'title' => 'Cool Title',
-                'author' => 'Victor'
-            ]
+            $this->data()
         );
 
         $book = Book::first();
@@ -91,12 +83,12 @@ class BookManagementTest extends TestCase
             $book->path(),
             [
                 'title' => 'New Title',
-                'author' => 'New Author'
+                'author_id' => 'New Author'
             ]
         );
 
         $this->assertEquals('New Title', Book::first()->title);
-        $this->assertEquals('New Author', Book::first()->author);
+        $this->assertEquals(2, Book::first()->author_id);
         $response->assertRedirect($book->fresh()->path());
     }
 
@@ -108,7 +100,7 @@ class BookManagementTest extends TestCase
     public function testABookCanBeDeleted()
     {
         $this->withoutExceptionHandling();
-        $this->post('/books', ['title' => 'Cool Title', 'author' => 'Victor']);
+        $this->post('/books', $this->data());
 
         $book = Book::first();
 
@@ -117,5 +109,36 @@ class BookManagementTest extends TestCase
 
         $this->assertCount(0, Book::all());
         $response->assertRedirect('/books');
+    }
+
+    /**
+     * Tests if a new Author is created if he doesnt exist when creating a book
+     * 
+     * @return void
+     */
+    public function testANewAuthorIsAutomaticallyAdded()
+    {
+        $this->withoutExceptionHandling();
+        $this->post(
+            '/books',
+            [
+                'title' => 'Cool Title',
+                'author_id' => 'Victor',
+            ]
+        );
+
+        $book = Book::first();
+        $author = Author::first();
+
+        $this->assertEquals($author->id, $book->author_id);
+        $this->assertCount(1, Author::all());
+    }
+
+    private function data()
+    {
+        return [
+            'title' => 'Cool Title',
+            'author_id' => 'Victor'
+        ];
     }
 }
