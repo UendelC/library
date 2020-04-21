@@ -21,6 +21,40 @@ class Book extends Model
     }
 
     /**
+     * A user checks out a book
+     * 
+     * @return void
+     */
+    public function checkout($user)
+    {
+        $this->reservations()->create(
+            [
+                'user_id' => $user->id,
+                'checked_out_at' => now()
+            ]
+        );
+    }
+
+    /**
+     * Checks in a book
+     * 
+     * @return void
+     */
+    public function checkin($user)
+    {
+        $reservation = $this->reservations()->where('user_id', $user->id)
+            ->whereNotNull('checked_out_at')
+            ->whereNull('checked_in_at')
+            ->first();
+
+        if (is_null($reservation)) {
+            throw new \Exception();
+        }
+
+        $reservation->update(['checked_in_at' => now()]);
+    }
+
+    /**
      * Adds relationship Author has many Books
      * 
      * @param  $author to be added in relationship
@@ -33,5 +67,15 @@ class Book extends Model
                 'name' => $author,
             ]
         ))->id;
+    }
+
+    /**
+     * Relatioship between books and reservation
+     * 
+     * @return void
+     */
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
     }
 }
