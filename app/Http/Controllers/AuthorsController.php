@@ -8,6 +8,16 @@ use Illuminate\Http\Request;
 class AuthorsController extends Controller
 {
     /**
+     * Create
+     * 
+     * @return view
+     */
+    public function create()
+    {
+        return view('authors.create');
+    }
+
+    /**
      * Stores authors
      * 
      * @return void
